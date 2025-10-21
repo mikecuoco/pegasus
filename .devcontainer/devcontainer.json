@@ -1,0 +1,16 @@
+{
+  "name": "Pegasus",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12-ubuntu-24.04",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-pydata.jupyter",
+        "eamodio.gitlens",
+        "GitHub.vscode-github-actions"
+      ]
+    }
+  },
+  "forwardPorts": [8888]
+}

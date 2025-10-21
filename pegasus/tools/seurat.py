@@ -13,6 +13,8 @@ def convert_to_seurat(
 ) -> None:
     """Convert a Pegasus data object to a Seurat object and save it as an RDS file.
     
+    Handles sparse matrices efficiently without converting to dense format.
+    
     This function converts a Pegasus/AnnData object to a Seurat object using rpy2 
     and saves it to an RDS file that can be loaded in R.
 
@@ -51,6 +53,8 @@ def convert_to_seurat(
         from rpy2.robjects.packages import importr
         from rpy2.robjects import pandas2ri
         from rpy2.robjects.conversion import localconverter
+        from rpy2.robjects import IntVector, FloatVector
+        from rpy2.robjects.packages import importr as importr_matrix
     except ImportError:
         import sys
         logger.error("Need rpy2! Try 'pip install pegasuspy[rpy2]'.")
@@ -67,27 +71,44 @@ def convert_to_seurat(
 
     logger.info("Starting conversion from Pegasus to Seurat.")
 
-    logger.info("Extracting data matrix, cell names, gene names, and metadata.")
-    df = data.X.transpose().toarray()
+    logger.info("Extracting sparse matrix, cell names, gene names, and metadata.")
+    # Transpose and ensure CSR format (efficient for row operations)
+    X_sparse = data.X.transpose().tocsr()
+    
     cells = data.obs.index.to_list()
     genes = data.var.index.to_list()
     metadata = data.obs
 
-    # Use the localconverter context manager for the conversion
-    logger.info("Converting data to R objects.")
+    # Convert sparse matrix to R's dgCMatrix format
+    logger.info("Converting sparse matrix to R dgCMatrix format.")
+    # Get COO format for sparse matrix (row, col, data)
+    X_coo = X_sparse.tocoo()
+    
+    # Import R's IntVector and FloatVector for sparse matrix construction
+    Matrix = importr_matrix('Matrix')
+    
+    # R uses 1-based indexing, Python uses 0-based
+    r_sparse = Matrix.sparseMatrix(
+        i=IntVector(X_coo.row + 1),
+        j=IntVector(X_coo.col + 1),
+        x=FloatVector(X_coo.data),
+        dims=IntVector([X_sparse.shape[0], X_sparse.shape[1]]),
+        dimnames=[genes, cells]
+    )
+
+    # Convert metadata
+    logger.info("Converting metadata to R DataFrame.")
     with localconverter(pandas2ri.converter):
-        # The conversion from pandas to R happens safely inside this block
-        rdf = pandas2ri.py2rpy(pd.DataFrame(df, index=genes, columns=cells))
         r_metadata = pandas2ri.py2rpy(metadata)
 
-    # Create the Seurat object using the converted R objects
+    # Create the Seurat object using the sparse matrix
     logger.info("Creating Seurat object.")
     seurat_obj = seurat.CreateSeuratObject(
-        counts=rdf, 
+        counts=r_sparse, 
         meta_data=r_metadata
     )
 
     # Save the Seurat object to an RDS file
     logger.info(f"Saving Seurat object to {rds_filename}.")
     base.saveRDS(seurat_obj, file=rds_filename)
-    logger.info("Conversion complete.")
+

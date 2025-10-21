@@ -37,11 +37,11 @@ def convert_to_seurat(
     Notes
     -----
     This function requires R to be installed with the SeuratObject package, 
-    and the Python packages rpy2 to be installed.
+    and the Python package rpy2 to be installed.
     
     You can install the required Python package with::
     
-        pip install rpy2
+        pip install pegasuspy[rpy2]
     
     And install the required R package with::
     
@@ -53,7 +53,7 @@ def convert_to_seurat(
         from rpy2.robjects.conversion import localconverter
     except ImportError:
         import sys
-        logger.error("Need rpy2! Try 'pip install rpy2'.")
+        logger.error("Need rpy2! Try 'pip install pegasuspy[rpy2]'.")
         sys.exit(-1)
 
     # Import R's 'base' and 'Seurat' packages as Python objects
@@ -90,4 +90,4 @@ def convert_to_seurat(
     # Save the Seurat object to an RDS file
     logger.info(f"Saving Seurat object to {rds_filename}.")
     base.saveRDS(seurat_obj, file=rds_filename)
-    logger.info("Conversion complete."),
+    logger.info("Conversion complete.")

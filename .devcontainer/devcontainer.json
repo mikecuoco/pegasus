@@ -1,16 +1,19 @@
 {
-  "name": "Pegasus",
-  "image": "mcr.microsoft.com/devcontainers/python:3.12-ubuntu-24.04",
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "name": "Pegasus Dev Environment (Feature-Based)",
+  // Start from a minimal base image. Ubuntu is a good choice.
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "postCreateCommand": "bash ./.devcontainer/post-create.sh",
+  // Add VS Code extensions for a better development experience.
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "ms-pydata.jupyter",
-        "eamodio.gitlens",
-        "GitHub.vscode-github-actions"
+        "GitHub.copilot-chat",
+        "ms-toolsai.jupyter"
       ]
     }
   },
-  "forwardPorts": [8888]
+  // Run as the default 'vscode' user. The script will use 'sudo' for apt.
+  "remoteUser": "vscode"
 }
+

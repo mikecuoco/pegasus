@@ -11,6 +11,7 @@ sudo apt install -y --no-install-recommends \
     libfftw3-dev \
     default-jdk \
     git \
+    git-lfs \
     cmake \
     r-base \
     r-base-dev \
